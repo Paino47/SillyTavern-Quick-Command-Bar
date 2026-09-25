@@ -1,0 +1,141 @@
+/* Quick Command Bar 0.1
+ * Intentionally theme-neutral. Uses SillyTavern theme variables when available.
+ */
+
+#quick-command-bar.qcb-root {
+    width: min(100%, 760px);
+    margin: 0 auto 6px;
+    padding: 5px 8px;
+    box-sizing: border-box;
+
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 6px;
+
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.35));
+    border-radius: 12px;
+    background: var(--SmartThemeBlurTintColor, rgba(30,30,30,.72));
+    color: var(--SmartThemeBodyColor, inherit);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 20;
+}
+
+#quick-command-bar .qcb-items {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#quick-command-bar .qcb-item,
+#quick-command-bar .qcb-arrow {
+    appearance: none;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.35));
+    background: var(--SmartThemeBlurTintColor, rgba(255,255,255,.06));
+    color: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    min-height: 30px;
+    padding: 5px 9px;
+    font: inherit;
+    line-height: 1.2;
+    transition: filter .15s ease, transform .15s ease, background .15s ease;
+}
+
+#quick-command-bar .qcb-item {
+    width: 100%;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#quick-command-bar .qcb-item:hover,
+#quick-command-bar .qcb-arrow:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+#quick-command-bar .qcb-arrow {
+    align-self: center;
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+}
+
+#quick-command-bar .qcb-arrow:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+#quick-command-bar .qcb-page {
+    position: absolute;
+    right: 42px;
+    bottom: -17px;
+    font-size: 10px;
+    opacity: .55;
+    pointer-events: none;
+}
+
+.qcb-settings .qcb-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.qcb-settings #qcb-count {
+    width: 70px;
+}
+
+.qcb-manager-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0 8px;
+}
+
+.qcb-edit-row {
+    display: grid;
+    gap: 6px;
+    padding: 10px 0;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.25));
+}
+
+.qcb-edit-row input,
+.qcb-edit-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.qcb-edit-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.qcb-edit-actions .menu_button {
+    min-width: 42px;
+}
+
+@media (max-width: 700px) {
+    #quick-command-bar.qcb-root {
+        width: 100%;
+        border-radius: 10px;
+        margin-bottom: 4px;
+        padding: 4px 5px;
+        grid-template-columns: 30px minmax(0, 1fr) 30px;
+    }
+
+    #quick-command-bar .qcb-arrow {
+        width: 30px;
+        min-height: 30px;
+    }
+
+    #quick-command-bar .qcb-item {
+        min-height: 28px;
+        font-size: 13px;
+    }
+}
