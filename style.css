@@ -1,141 +1,208 @@
-/* Quick Command Bar 0.1
- * Intentionally theme-neutral. Uses SillyTavern theme variables when available.
- */
+/* Quick Command Bar 0.2 - theme neutral */
 
-#quick-command-bar.qcb-root {
-    width: min(100%, 760px);
-    margin: 0 auto 6px;
-    padding: 5px 8px;
-    box-sizing: border-box;
-
-    display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 34px;
-    align-items: center;
-    gap: 6px;
-
+#qcb-trigger {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    margin: 0 4px;
+    padding: 0;
     border: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.35));
-    border-radius: 12px;
+    border-radius: 50%;
     background: var(--SmartThemeBlurTintColor, rgba(30,30,30,.72));
     color: var(--SmartThemeBodyColor, inherit);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 20;
-}
-
-#quick-command-bar .qcb-items {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-#quick-command-bar .qcb-item,
-#quick-command-bar .qcb-arrow {
-    appearance: none;
-    border: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.35));
-    background: var(--SmartThemeBlurTintColor, rgba(255,255,255,.06));
-    color: inherit;
-    border-radius: 8px;
+    font-size: 18px;
+    line-height: 1;
     cursor: pointer;
-    min-height: 30px;
-    padding: 5px 9px;
-    font: inherit;
-    line-height: 1.2;
-    transition: filter .15s ease, transform .15s ease, background .15s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,.18);
+    transition: transform .15s ease, filter .15s ease;
+    z-index: 100;
 }
+#qcb-trigger:hover { filter: brightness(1.15); transform: translateY(-1px) scale(1.04); }
+#qcb-trigger span { display:block; transform:rotate(90deg); }
 
-#quick-command-bar .qcb-item {
-    width: 100%;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-#quick-command-bar .qcb-item:hover,
-#quick-command-bar .qcb-arrow:hover:not(:disabled) {
-    filter: brightness(1.15);
-    transform: translateY(-1px);
-}
-
-#quick-command-bar .qcb-arrow {
-    align-self: center;
-    width: 34px;
-    min-height: 34px;
-    padding: 0;
-}
-
-#quick-command-bar .qcb-arrow:disabled {
-    opacity: .35;
-    cursor: default;
-}
-
-#quick-command-bar .qcb-page {
-    position: absolute;
-    right: 42px;
-    bottom: -17px;
-    font-size: 10px;
-    opacity: .55;
-    pointer-events: none;
-}
-
-.qcb-settings .qcb-setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 8px 0;
-}
-
-.qcb-settings #qcb-count {
-    width: 70px;
-}
-
-.qcb-manager-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 12px 0 8px;
-}
-
-.qcb-edit-row {
-    display: grid;
-    gap: 6px;
-    padding: 10px 0;
-    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.25));
-}
-
-.qcb-edit-row input,
-.qcb-edit-row textarea {
-    width: 100%;
+/* Default: a compact popup opened by the small icon. */
+#quick-command-bar.qcb-floating {
+    position: fixed;
+    left: 8px;
+    bottom: 70px;
+    display: none;
     box-sizing: border-box;
+    max-height: min(430px, calc(100vh - 24px));
+    padding: 7px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.38));
+    border-radius: 12px;
+    background: var(--SmartThemeBlurTintColor, rgba(20,20,20,.94));
+    color: var(--SmartThemeBodyColor, inherit);
+    box-shadow: 0 8px 30px rgba(0,0,0,.30);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 99999;
+    overflow: auto;
+}
+#quick-command-bar.qcb-floating.qcb-open { display:block; }
+
+.qcb-head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+    padding:2px 4px 5px;
+    font-size:12px;
+    opacity:.8;
+}
+.qcb-head button, .qcb-arrow, .qcb-edit, .qcb-add {
+    border:0;
+    background:transparent;
+    color:inherit;
+    cursor:pointer;
+}
+.qcb-close { font-size:18px; line-height:1; padding:0 3px; }
+.qcb-close:hover, .qcb-edit:hover, .qcb-add:hover { background:rgba(127,127,127,.16); }
+
+.qcb-items {
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin:3px 0;
+}
+.qcb-row {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 28px;
+    gap:3px;
+}
+.qcb-item {
+    width:100%;
+    min-width:0;
+    min-height:32px;
+    padding:5px 9px;
+    border:1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.25));
+    border-radius:7px;
+    background:rgba(127,127,127,.07);
+    color:inherit;
+    font:inherit;
+    text-align:left;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    cursor:pointer;
+}
+.qcb-item:hover { background:rgba(127,127,127,.15); }
+.qcb-edit {
+    border-radius:7px;
+    opacity:.5;
+}
+.qcb-arrow {
+    display:block;
+    width:100%;
+    height:24px;
+    border-radius:7px;
+    opacity:.65;
+}
+.qcb-arrow:hover:not(:disabled) { background:rgba(127,127,127,.12); opacity:1; }
+.qcb-arrow:disabled { opacity:.18; cursor:default; }
+.qcb-page {
+    display:block;
+    text-align:center;
+    min-height:12px;
+    font-size:10px;
+    opacity:.55;
+}
+.qcb-add {
+    display:block;
+    width:100%;
+    margin-top:3px;
+    padding:4px;
+    border-radius:7px;
+    font-size:12px;
+}
+.qcb-empty { padding:18px 8px; text-align:center; opacity:.55; }
+
+.qcb-inline-editor {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:5px;
+    padding:5px;
+    border:1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.3));
+    border-radius:8px;
+}
+.qcb-inline-editor input,
+.qcb-inline-editor textarea {
+    width:100%;
+    box-sizing:border-box;
+}
+.qcb-inline-actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:5px;
+}
+.qcb-inline-actions button {
+    border:1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.3));
+    border-radius:6px;
+    background:rgba(127,127,127,.08);
+    color:inherit;
+    cursor:pointer;
+    padding:4px 8px;
 }
 
-.qcb-edit-actions {
-    display: flex;
-    gap: 5px;
+/* Optional legacy/always-visible mode. */
+#quick-command-bar.qcb-always {
+    position:static;
+    width:min(100%,560px);
+    margin:0 auto 5px;
+    padding:4px 6px;
+    display:grid;
+    grid-template-columns:28px minmax(0,1fr) 28px;
+    gap:5px;
+    align-items:center;
+    box-sizing:border-box;
+    border:1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.3));
+    border-radius:10px;
+    background:var(--SmartThemeBlurTintColor, rgba(20,20,20,.78));
 }
+.qcb-always .qcb-items { margin:0; }
+.qcb-always .qcb-page,
+.qcb-always .qcb-add,
+.qcb-always .qcb-head { display:none; }
 
-.qcb-edit-actions .menu_button {
-    min-width: 42px;
+/* Extension settings remains available in every mode. */
+.qcb-settings .qcb-setting-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin:8px 0;
 }
+.qcb-settings #qcb-count { width:70px; }
+.qcb-settings #qcb-mode { max-width:280px; }
+.qcb-manager-head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:12px 0 8px;
+}
+.qcb-edit-row {
+    display:grid;
+    gap:6px;
+    padding:10px 0;
+    border-top:1px solid var(--SmartThemeBorderColor, rgba(128,128,128,.25));
+}
+.qcb-edit-row input, .qcb-edit-row textarea { width:100%; box-sizing:border-box; }
+.qcb-edit-actions { display:flex; gap:5px; }
+.qcb-edit-actions .menu_button { min-width:42px; }
 
-@media (max-width: 700px) {
-    #quick-command-bar.qcb-root {
-        width: 100%;
-        border-radius: 10px;
-        margin-bottom: 4px;
-        padding: 4px 5px;
-        grid-template-columns: 30px minmax(0, 1fr) 30px;
+@media (max-width:700px) {
+    #qcb-trigger {
+        width:34px;
+        height:34px;
+        min-width:34px;
+        margin:0 3px;
+        font-size:16px;
     }
-
-    #quick-command-bar .qcb-arrow {
-        width: 30px;
-        min-height: 30px;
+    #quick-command-bar.qcb-floating {
+        max-height:min(60vh,420px);
+        border-radius:10px;
     }
-
-    #quick-command-bar .qcb-item {
-        min-height: 28px;
-        font-size: 13px;
-    }
+    .qcb-item { min-height:30px; font-size:13px; }
+    #quick-command-bar.qcb-always { width:100%; border-radius:9px; }
 }
