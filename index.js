@@ -133,7 +133,7 @@ function positionQuickBar(){
 
 function createFloatingBar(){
     if(document.querySelector('#qcb-trigger')) return;
-    const trigger=document.createElement('button'); trigger.id='qcb-trigger'; trigger.type='button'; trigger.className='qcb-trigger'; trigger.title='快捷指令'; trigger.setAttribute('aria-label','快捷指令'); trigger.innerHTML='<span>⌘</span>';
+    const trigger=document.createElement('button'); trigger.id='qcb-trigger'; trigger.type='button'; trigger.className='qcb-trigger'; trigger.title='快捷指令'; trigger.setAttribute('aria-label','快捷指令'); trigger.innerHTML='<span>✦</span>';
     const root=document.createElement('section'); root.id='quick-command-bar'; root.className='qcb-root qcb-floating';
     root.innerHTML='<div class="qcb-head"><span>快捷指令</span><button type="button" class="qcb-close">×</button></div><button type="button" class="qcb-arrow qcb-prev">▲</button><div class="qcb-items"></div><button type="button" class="qcb-arrow qcb-next">▼</button><span class="qcb-page"></span><button type="button" class="qcb-add">＋ 新增</button>';
     document.body.appendChild(root);
