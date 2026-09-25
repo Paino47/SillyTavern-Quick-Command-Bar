@@ -2,6 +2,7 @@ const MODULE_NAME = 'quick-command-bar';
 
 const DEFAULT_SETTINGS = {
     enabled: true,
+    displayMode: 'floating',
     visibleCount: 5,
     items: [
         { id: 'continue', name: '继续', text: '请继续当前剧情。' },
@@ -28,6 +29,7 @@ function getSettings() {
 
     if (!Array.isArray(settings.items)) settings.items = [];
     if (!Number.isFinite(settings.visibleCount)) settings.visibleCount = 5;
+    if (!['floating', 'always', 'settings'].includes(settings.displayMode)) settings.displayMode = 'floating';
     if (typeof settings.enabled !== 'boolean') settings.enabled = true;
     return settings;
 }
@@ -91,74 +93,67 @@ function clampPage() {
 }
 
 function renderBar() {
-    if (!barRoot) return;
-    clampPage();
-
-    const list = barRoot.querySelector('.qcb-items');
-    list.replaceChildren();
-
-    const count = Math.max(1, settings.visibleCount);
-    const start = currentPage * count;
-    const pageItems = settings.items.slice(start, start + count);
-
-    for (const item of pageItems) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'qcb-item';
-        button.title = item.text;
-        button.textContent = item.name || item.text.slice(0, 20) || '未命名';
-        button.addEventListener('click', () => insertText(item.text));
-        list.appendChild(button);
+    const root=document.querySelector('#quick-command-bar'); if(!root) return;
+    const list=root.querySelector('.qcb-items'); if(!list) return; list.replaceChildren();
+    const count=Math.max(1,settings.visibleCount), startIndex=currentPage*count, pageItems=settings.items.slice(startIndex,startIndex+count);
+    if(!pageItems.length){ const empty=document.createElement('div'); empty.className='qcb-empty'; empty.textContent='还没有快捷项'; list.appendChild(empty); }
+    for(const item of pageItems){
+        const row=document.createElement('div'); row.className='qcb-row'; row.dataset.itemId=item.id;
+        const button=document.createElement('button'); button.type='button'; button.className='qcb-item'; button.title=item.text; button.textContent=item.name||item.text.slice(0,20)||'未命名';
+        button.addEventListener('click',()=>{insertText(item.text);closeQuickBar();});
+        const edit=document.createElement('button'); edit.type='button'; edit.className='qcb-edit'; edit.textContent='✎'; edit.title='直接编辑'; edit.addEventListener('click',(event)=>{event.stopPropagation();openInlineEditor(item);});
+        row.append(button,edit); list.appendChild(row);
     }
-
-    const prev = barRoot.querySelector('.qcb-prev');
-    const next = barRoot.querySelector('.qcb-next');
-    const total = pageCount();
-
-    prev.disabled = currentPage <= 0;
-    next.disabled = currentPage >= total - 1;
-
-    barRoot.querySelector('.qcb-page').textContent =
-        total > 1 ? `${currentPage + 1} / ${total}` : '';
+    const prev=root.querySelector('.qcb-prev'),next=root.querySelector('.qcb-next'),total=pageCount();
+    prev.disabled=currentPage<=0; next.disabled=currentPage>=total-1;
+    const page=root.querySelector('.qcb-page'); if(page) page.textContent=total>1?(currentPage+1)+' / '+total:'';
 }
 
-function createBar() {
-    if (document.querySelector('#quick-command-bar')) return;
+function openInlineEditor(item){
+    const root=document.querySelector('#quick-command-bar'),row=root?.querySelector('.qcb-row[data-item-id="'+CSS.escape(item.id)+'"]'); if(!row) return;
+    row.replaceChildren(); row.classList.add('qcb-inline-editor');
+    const name=document.createElement('input'); name.type='text'; name.value=item.name||''; name.placeholder='显示名称';
+    const text=document.createElement('textarea'); text.rows=3; text.value=item.text||''; text.placeholder='实际插入内容';
+    const actions=document.createElement('div'); actions.className='qcb-inline-actions';
+    const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent='保存';
+    const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.textContent='取消';
+    saveButton.addEventListener('click',()=>{item.name=name.value.trim()||'未命名';item.text=text.value;save();renderBar();});
+    cancelButton.addEventListener('click',()=>renderBar()); actions.append(saveButton,cancelButton); row.append(name,text,actions); text.focus();
+}
 
-    barRoot = document.createElement('section');
-    barRoot.id = 'quick-command-bar';
-    barRoot.className = 'qcb-root';
-    barRoot.innerHTML = `
-        <button type="button" class="qcb-arrow qcb-prev" aria-label="上一页">▲</button>
-        <div class="qcb-items" aria-label="快捷指令"></div>
-        <button type="button" class="qcb-arrow qcb-next" aria-label="下一页">▼</button>
-        <span class="qcb-page" aria-hidden="true"></span>
-    `;
+function closeQuickBar(){document.querySelector('#quick-command-bar')?.classList.remove('qcb-open');}
 
-    barRoot.querySelector('.qcb-prev').addEventListener('click', () => {
-        currentPage--;
-        renderBar();
-    });
-    barRoot.querySelector('.qcb-next').addEventListener('click', () => {
-        currentPage++;
-        renderBar();
-    });
+function positionQuickBar(){
+    const root=document.querySelector('#quick-command-bar'),trigger=document.querySelector('#qcb-trigger'); if(!root||!trigger) return;
+    const r=trigger.getBoundingClientRect(),width=Math.min(300,window.innerWidth-16); let left=r.left;
+    if(left+width>window.innerWidth-8) left=window.innerWidth-width-8; if(left<8) left=8;
+    root.style.width=width+'px'; root.style.left=left+'px'; root.style.bottom=Math.max(8,window.innerHeight-r.top+8)+'px';
+}
 
-    // 优先放在发送表单之前，避免修改酒馆外侧布局。
-    const sendForm = document.querySelector('#send_form');
-    if (sendForm?.parentElement) {
-        sendForm.parentElement.insertBefore(barRoot, sendForm);
-    } else {
-        document.body.appendChild(barRoot);
-    }
-
+function createFloatingBar(){
+    if(document.querySelector('#qcb-trigger')) return;
+    const trigger=document.createElement('button'); trigger.id='qcb-trigger'; trigger.type='button'; trigger.className='qcb-trigger'; trigger.title='快捷指令'; trigger.setAttribute('aria-label','快捷指令'); trigger.innerHTML='<span>⌘</span>';
+    const root=document.createElement('section'); root.id='quick-command-bar'; root.className='qcb-root qcb-floating';
+    root.innerHTML='<div class="qcb-head"><span>快捷指令</span><button type="button" class="qcb-close">×</button></div><button type="button" class="qcb-arrow qcb-prev">▲</button><div class="qcb-items"></div><button type="button" class="qcb-arrow qcb-next">▼</button><span class="qcb-page"></span><button type="button" class="qcb-add">＋ 新增</button>';
+    document.body.appendChild(root);
+    trigger.addEventListener('click',()=>{root.classList.toggle('qcb-open');if(root.classList.contains('qcb-open')){renderBar();positionQuickBar();}});
+    root.querySelector('.qcb-close').addEventListener('click',closeQuickBar);
+    root.querySelector('.qcb-prev').addEventListener('click',()=>{currentPage--;renderBar();}); root.querySelector('.qcb-next').addEventListener('click',()=>{currentPage++;renderBar();});
+    root.querySelector('.qcb-add').addEventListener('click',()=>{const item={id:crypto.randomUUID(),name:'新快捷项',text:''};settings.items.push(item);currentPage=pageCount()-1;save();renderBar();openInlineEditor(item);});
+    const extensionsButton=document.querySelector('#extensionsMenuButton'); if(extensionsButton?.parentElement) extensionsButton.parentElement.insertBefore(trigger,extensionsButton); else document.body.appendChild(trigger);
     renderBar();
 }
 
-function removeBar() {
-    document.querySelector('#quick-command-bar')?.remove();
-    barRoot = null;
+function createAlwaysBar(){
+    if(document.querySelector('#quick-command-bar')) return;
+    const root=document.createElement('section'); root.id='quick-command-bar'; root.className='qcb-root qcb-always';
+    root.innerHTML='<button type="button" class="qcb-arrow qcb-prev">▲</button><div class="qcb-items"></div><button type="button" class="qcb-arrow qcb-next">▼</button>';
+    const sendForm=document.querySelector('#send_form'); if(sendForm?.parentElement) sendForm.parentElement.insertBefore(root,sendForm); else document.body.appendChild(root);
+    root.querySelector('.qcb-prev').addEventListener('click',()=>{currentPage--;renderBar();}); root.querySelector('.qcb-next').addEventListener('click',()=>{currentPage++;renderBar();}); renderBar();
 }
+
+function removeBar(){document.querySelector('#qcb-trigger')?.remove();document.querySelector('#quick-command-bar')?.remove();}
+function applyDisplayMode(){removeBar();if(!settings.enabled||settings.displayMode==='settings')return;if(settings.displayMode==='always')createAlwaysBar();else createFloatingBar();}
 
 function renderSettings() {
     const host = document.querySelector('#extensions_settings2, #extensions_settings');
@@ -169,13 +164,18 @@ function renderSettings() {
     panel.className = 'qcb-settings inline-drawer';
     panel.innerHTML = `
       <div class="inline-drawer-toggle inline-drawer-header">
-        <b>Quick Command Bar 0.1</b>
+        <b>Quick Command Bar 0.2</b>
         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down"></div>
       </div>
       <div class="inline-drawer-content">
         <label class="qcb-setting-row">
           <input id="qcb-enabled" type="checkbox">
           <span>启用底部快捷栏</span>
+        </label>
+
+        <label class="qcb-setting-row">
+          <span>显示方式</span>
+          <select id="qcb-mode"><option value="floating">小图标：点击后弹出</option><option value="always">始终显示在输入框上方</option><option value="settings">只在扩展设置里管理</option></select>
         </label>
 
         <label class="qcb-setting-row">
@@ -204,9 +204,11 @@ function renderSettings() {
     enabled.checked = settings.enabled;
     enabled.addEventListener('change', () => {
         settings.enabled = enabled.checked;
-        if (settings.enabled) createBar(); else removeBar();
+        applyDisplayMode();
         save();
     });
+
+    const mode=panel.querySelector('#qcb-mode'); mode.value=settings.displayMode; mode.addEventListener('change',()=>{settings.displayMode=mode.value;currentPage=0;applyDisplayMode();save();});
 
     const count = panel.querySelector('#qcb-count');
     count.value = settings.visibleCount;
@@ -305,17 +307,17 @@ async function init() {
         const sendForm = document.querySelector('#send_form');
         const settingsHost = document.querySelector('#extensions_settings2, #extensions_settings');
 
-        if (settings.enabled && sendForm) createBar();
+        if (sendForm) applyDisplayMode();
         if (settingsHost) renderSettings();
 
         if ((settings.enabled && sendForm && settingsHost) || Date.now() - start > 10000) {
             clearInterval(timer);
         }
     }, 250);
-}
 
-window.addEventListener('resize', () => {
-    if (barRoot) renderBar();
-});
+    document.addEventListener('click',(event)=>{const root=document.querySelector('#quick-command-bar'),trigger=document.querySelector('#qcb-trigger');if(root?.classList.contains('qcb-open')&&!root.contains(event.target)&&!trigger?.contains(event.target))closeQuickBar();});
+    window.addEventListener('resize',positionQuickBar);
+    window.addEventListener('scroll',positionQuickBar,true);
+}
 
 $(init);
