@@ -93,6 +93,7 @@ function clampPage() {
 }
 
 function renderBar() {
+    clampPage();
     const root=document.querySelector('#quick-command-bar'); if(!root) return;
     const list=root.querySelector('.qcb-items'); if(!list) return; list.replaceChildren();
     const count=Math.max(1,settings.visibleCount), startIndex=currentPage*count, pageItems=settings.items.slice(startIndex,startIndex+count);
