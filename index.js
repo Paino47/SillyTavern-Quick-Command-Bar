@@ -125,11 +125,14 @@ function createPopupControls(root) {
     const group = root.querySelector('.qcb-group');
 
     search.value = searchQuery;
-    search.addEventListener('input', () => {
-        searchQuery = search.value;
-        currentPage = 0;
-        renderBar();
-    });
+    if (!search.dataset.bound) {
+        search.dataset.bound = '1';
+        search.addEventListener('input', () => {
+            searchQuery = search.value;
+            currentPage = 0;
+            renderBar();
+        });
+    }
 
     group.replaceChildren();
     const all = document.createElement('option');
@@ -148,11 +151,14 @@ function createPopupControls(root) {
         activeGroup = '全部';
         group.value = '全部';
     }
-    group.addEventListener('change', () => {
-        activeGroup = group.value;
-        currentPage = 0;
-        renderBar();
-    });
+    if (!group.dataset.bound) {
+        group.dataset.bound = '1';
+        group.addEventListener('change', () => {
+            activeGroup = group.value;
+            currentPage = 0;
+            renderBar();
+        });
+    }
 }
 
 function moveItemBefore(draggedId, targetId) {
@@ -712,7 +718,7 @@ async function init() {
         const sendForm = document.querySelector('#send_form');
         const settingsHost = document.querySelector('#extensions_settings2, #extensions_settings');
 
-        if (sendForm) applyDisplayMode();
+        if (sendForm && !document.querySelector('#qcb-trigger, #quick-command-bar')) applyDisplayMode();
         if (settingsHost) renderSettings();
 
         if ((sendForm && settingsHost) || Date.now() - start > 10000) {
