@@ -6,7 +6,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "ag + ChatGPT",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homePage": "https://github.com/Paino47/SillyTavern-Quick-Command-Bar",
   "hooks": {
     "activate": "init"
