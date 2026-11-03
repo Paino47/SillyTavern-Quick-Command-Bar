@@ -29,7 +29,7 @@
     let observer = null;
 
     const clone = value => JSON.parse(JSON.stringify(value));
-    const makeId = () => (crypto.randomUUID ? crypto.randomUUID() : 'upf-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+    const makeId = () => (globalThis.crypto?.randomUUID?.() || 'upf-' + Date.now() + '-' + Math.random().toString(36).slice(2));
     const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
@@ -202,6 +202,7 @@
                 '<strong>' + esc(block.title) + '</strong><p>' + esc(preview) + '</p></div>' +
                 '<div class="upf-card-actions">' +
                     '<button class="upf-mini-btn" data-action="edit-block" data-id="' + esc(block.id) + '">编辑</button>' +
+                    '<button class="upf-mini-btn upf-danger" data-action="delete-block" data-id="' + esc(block.id) + '">删除</button>' +
                     '<button class="upf-add-btn ' + (selected ? 'is-added' : '') + '" data-action="' + (selected ? 'remove-block' : 'add-block') +
                     '" data-id="' + esc(block.id) + '">' + (selected ? '已加入 ✓' : '加入合成 +') + '</button>' +
                 '</div></article>';
@@ -322,6 +323,18 @@
         render();
     }
 
+    function deleteBlock(id) {
+        const block = getBlock(id);
+        if (!block || !window.confirm('删除区块「' + block.title + '」？它也会从合成台和相关面具方案中移除。')) return;
+        settings.blocks = settings.blocks.filter(item => item.id !== id);
+        settings.builderIds = settings.builderIds.filter(item => item !== id);
+        settings.masks.forEach(mask => { mask.blockIds = mask.blockIds.filter(item => item !== id); });
+        if (editingBlock?.id === id) editingBlock = null;
+        save();
+        render();
+        notify('区块已删除。', 'success');
+    }
+
     function removeBlock(id) {
         settings.builderIds = settings.builderIds.filter(item => item !== id);
         save();
@@ -375,6 +388,17 @@
         if (!settings.categories.includes(clean)) {
             settings.categories.push(clean);
             save();
+            if (editingBlock) {
+                const select = panel?.querySelector('#upf-edit-category');
+                if (select) {
+                    const option = document.createElement('option');
+                    option.value = clean;
+                    option.textContent = clean;
+                    option.selected = true;
+                    select.appendChild(option);
+                    return;
+                }
+            }
             render();
         }
     }
@@ -539,6 +563,7 @@
         else if (action === 'cancel-edit') { editingBlock = null; render(); }
         else if (action === 'add-block') addBlock(id);
         else if (action === 'remove-block') removeBlock(id);
+        else if (action === 'delete-block') deleteBlock(id);
         else if (action === 'move-block') moveBlock(id, button.dataset.dir);
         else if (action === 'save-mask') saveMask();
         else if (action === 'load-mask') loadMask(id);
@@ -608,6 +633,9 @@
 
     function init() {
         getSettings();
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && panel?.classList.contains('upf-open')) closePanel();
+        });
         if (mountLauncher()) return;
         if (observer) observer.disconnect();
         observer = new MutationObserver(() => {
