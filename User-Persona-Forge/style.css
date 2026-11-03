@@ -72,6 +72,7 @@ body.upf-lock-scroll { overflow: hidden !important; }
 .upf-primary-btn:hover:not(:disabled) { background:rgba(177,145,91,.27); }
 .upf-secondary-btn { min-height:34px; padding:7px 12px; font-size:12px; }
 .upf-mini-btn { padding:5px 8px; font-size:11px; opacity:.76; }
+.upf-danger { color:#d99b92 !important; }
 .upf-add-btn { padding:6px 9px; font-size:11px; white-space:nowrap; }
 .upf-add-btn.is-added { border-color:rgba(115,165,135,.45); color:#a8d1b4; background:rgba(80,140,105,.12); }
 .upf-text-btn { border:0; padding:6px; background:transparent; font-size:11px; opacity:.7; }
@@ -120,7 +121,7 @@ body.upf-lock-scroll { overflow: hidden !important; }
 .upf-builder-empty strong { font-size:13px; }
 .upf-builder-empty p { max-width:240px; color:var(--SmartThemeEmColor, #b8b4aa); font-size:11px; line-height:1.6; opacity:.65; }
 .upf-preview-paper { flex:1; min-height:290px; max-height:55vh; overflow:auto; margin:12px 0; padding:15px; border:1px solid rgba(190,165,120,.2); border-radius:8px; color:var(--SmartThemeBodyColor, #e9e7e2); background:rgba(0,0,0,.14); }
-.upf-preview-paper pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.8 inherit; }
+.upf-preview-paper pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:inherit; font-size:12px; line-height:1.8; }
 .upf-preview-empty { display:grid; place-items:center; min-height:260px; color:var(--SmartThemeEmColor, #b8b4aa); font-size:11px; text-align:center; opacity:.55; }
 .upf-output-actions { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .upf-safe-note { margin:9px 0 0; color:var(--SmartThemeEmColor, #b8b4aa); font-size:10px; line-height:1.5; opacity:.56; }
