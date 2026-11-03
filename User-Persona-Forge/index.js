@@ -26,6 +26,7 @@
     let activeCategory = '全部';
     let searchText = '';
     let editingBlock = null;
+    let returnTab = 'library';
     let observer = null;
 
     const clone = value => JSON.parse(JSON.stringify(value));
@@ -103,19 +104,19 @@
     }
 
     function buildOutput() {
-        const groups = new Map();
+        const lines = [];
+        let lastCategory = null;
         getBuilderBlocks().forEach(block => {
-            if (!block.content.trim()) return;
-            if (!groups.has(block.category)) groups.set(block.category, []);
-            groups.get(block.category).push(block);
+            const content = block.content.trim();
+            if (!content) return;
+            if (block.category !== lastCategory) {
+                if (lines.length) lines.push('');
+                lines.push('【' + block.category + '】');
+                lastCategory = block.category;
+            }
+            lines.push(block.title ? (content.includes('\n') ? block.title + '\n' + content : block.title + '：' + content) : content);
         });
-        return Array.from(groups.entries()).map(([category, blocks]) => {
-            const lines = blocks.map(block => {
-                const content = block.content.trim();
-                return block.title ? (content.includes('\n') ? block.title + '\n' + content : block.title + '：' + content) : content;
-            });
-            return '【' + category + '】\n' + lines.join('\n\n');
-        }).join('\n\n');
+        return lines.join('\n');
     }
 
     function ensurePanel() {
@@ -280,6 +281,7 @@
 
     function startEdit(id) {
         const block = id ? getBlock(id) : null;
+        returnTab = activeTab;
         editingBlock = block ? clone(block) : { id: '', title: '', category: activeCategory === '全部' ? '基础档案' : activeCategory, content: '' };
         activeTab = 'library';
         render();
@@ -313,6 +315,7 @@
         editingBlock = null;
         save();
         activeCategory = category;
+        activeTab = returnTab;
         render();
         notify('资料区块已保存。', 'success');
     }
@@ -560,7 +563,7 @@
         else if (action === 'new-block') startEdit();
         else if (action === 'edit-block') startEdit(id);
         else if (action === 'save-block') saveBlock();
-        else if (action === 'cancel-edit') { editingBlock = null; render(); }
+        else if (action === 'cancel-edit') { editingBlock = null; activeTab = returnTab; render(); }
         else if (action === 'add-block') addBlock(id);
         else if (action === 'remove-block') removeBlock(id);
         else if (action === 'delete-block') deleteBlock(id);
