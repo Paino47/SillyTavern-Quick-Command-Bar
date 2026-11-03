@@ -1,0 +1,11 @@
+{
+  "display_name": "User 面具工坊",
+  "loading_order": 20,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "元素四十七",
+  "version": "0.1.0",
+  "homePage": "https://github.com/Paino47/SillyTavern-Quick-Command-Bar/tree/feat/user-persona-forge/User-Persona-Forge"
+}
