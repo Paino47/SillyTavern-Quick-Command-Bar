@@ -184,8 +184,8 @@ body.upf-lock-scroll { overflow: hidden !important; }
 
 .upf-builder-row[draggable="true"] { cursor:grab; }
 .upf-builder-row.is-dragging { opacity:.42; }
-.upf-builder-row.is-drop-target { outline:1px dashed var(--upf-accent); outline-offset:3px; }
-.upf-drag-grip { display:inline-block; margin-right:7px; color:var(--upf-muted); cursor:grab; font-size:16px; vertical-align:-1px; }
-.upf-mask-preview { grid-column:1 / -1; margin:10px 0 0 48px; border-top:1px solid var(--upf-line); padding-top:9px; }
-.upf-mask-preview summary { color:var(--upf-muted); cursor:pointer; font-size:11px; letter-spacing:.04em; }
-.upf-mask-preview pre { max-height:260px; overflow:auto; margin:10px 0 0; padding:12px; border-radius:8px; background:var(--upf-paper); color:var(--upf-text); white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.8 inherit; }
+.upf-builder-row.is-drop-target { outline:1px dashed var(--SmartThemeEmColor, #d8c49b); outline-offset:3px; }
+.upf-drag-grip { display:inline-block; margin-right:7px; color:var(--SmartThemeEmColor, #b8b4aa); cursor:grab; font-size:16px; vertical-align:-1px; }
+.upf-mask-preview { flex:0 0 calc(100% - 51px); box-sizing:border-box; margin:0 0 0 51px; border-top:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.18)); padding-top:9px; }
+.upf-mask-preview summary { color:var(--SmartThemeEmColor, #b8b4aa); cursor:pointer; font-size:11px; letter-spacing:.04em; }
+.upf-mask-preview pre { max-height:260px; overflow:auto; margin:10px 0 0; padding:12px; border-radius:8px; background:var(--SmartThemeBlurTintColor, rgba(20,24,32,.6)); color:var(--SmartThemeBodyColor, inherit); white-space:pre-wrap; overflow-wrap:anywhere; font-family:inherit; font-size:12px; line-height:1.8; }
