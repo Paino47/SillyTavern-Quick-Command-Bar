@@ -28,6 +28,8 @@
     let editingBlock = null;
     let returnTab = 'library';
     let observer = null;
+    const selectedLibraryIds = new Set();
+    const selectedMaskIds = new Set();
 
     const clone = value => JSON.parse(JSON.stringify(value));
     const makeId = () => (globalThis.crypto?.randomUUID?.() || 'upf-' + Date.now() + '-' + Math.random().toString(36).slice(2));
@@ -68,6 +70,7 @@
             block.title = String(block.title ?? '未命名区块');
             block.content = String(block.content ?? '');
             block.category = String(block.category ?? '补充设定');
+            block.tags = Array.isArray(block.tags) ? [...new Set(block.tags.map(tag => String(tag).trim()).filter(Boolean))] : [];
             if (!settings.categories.includes(block.category)) settings.categories.push(block.category);
         });
         settings.masks.forEach(mask => {
@@ -191,7 +194,7 @@
         const query = searchText.trim().toLocaleLowerCase();
         const blocks = settings.blocks.filter(block => {
             const matchesCategory = activeCategory === '全部' || block.category === activeCategory;
-            const haystack = (block.title + '\n' + block.category + '\n' + block.content).toLocaleLowerCase();
+            const haystack = (block.title + '\n' + block.category + '\n' + block.content + '\n' + (block.tags || []).join(' ')).toLocaleLowerCase();
             return matchesCategory && (!query || haystack.includes(query));
         });
         const categories = ['全部'].concat(settings.categories);
@@ -208,8 +211,10 @@
             const preview = block.content.trim() ? block.content.trim().replace(/\s+/g, ' ').slice(0, 105) : '尚未填写内容 · 点击编辑';
             return '<article class="upf-block-card">' +
                 '<div class="upf-block-main"><div class="upf-card-kicker">' + esc(block.category) + '</div>' +
-                '<strong>' + esc(block.title) + '</strong><p>' + esc(preview) + '</p></div>' +
+                '<strong>' + esc(block.title) + '</strong><p>' + esc(preview) + '</p>' +
+                ((block.tags || []).length ? '<div class="upf-tags">' + block.tags.map(tag => '<span>' + esc(tag) + '</span>').join('') + '</div>' : '') + '</div>' +
                 '<div class="upf-card-actions">' +
+                    '<label class="upf-select-check"><input type="checkbox" data-select-block="' + esc(block.id) + '" ' + (selectedLibraryIds.has(block.id) ? 'checked' : '') + '>选择</label>' +
                     '<button class="upf-mini-btn" data-action="edit-block" data-id="' + esc(block.id) + '">编辑</button>' +
                     '<button class="upf-mini-btn upf-danger" data-action="delete-block" data-id="' + esc(block.id) + '">删除</button>' +
                     '<button class="upf-add-btn ' + (selected ? 'is-added' : '') + '" data-action="' + (selected ? 'remove-block' : 'add-block') +
@@ -224,6 +229,7 @@
             '<div><div class="upf-eyebrow">01 / LIBRARY</div><h2>资料区块库</h2><p>每一块资料都能独立保存，也可以反复加入不同面具。</p></div>' +
             '<div class="upf-toolbar-actions"><button class="upf-secondary-btn" data-action="create-fields">生成常用字段</button>' +
             '<button class="upf-primary-btn" data-action="new-block">＋ 新建区块</button></div></div>' +
+            '<div class="upf-library-batch"><span>已选 ' + selectedLibraryIds.size + ' 个区块</span><button class="upf-secondary-btn" data-action="select-visible">全选当前结果</button><button class="upf-text-btn" data-action="clear-library-selection">清除选择</button><button class="upf-primary-btn" data-action="batch-add-blocks" ' + (selectedLibraryIds.size ? '' : 'disabled') + '>批量加入合成台</button></div>' +
             '<div class="upf-library-layout"><aside class="upf-category-rail"><div class="upf-rail-title">资料分类</div>' +
             categoryHtml + '<button class="upf-add-category" data-action="add-category">＋ 新增分类</button></aside>' +
             '<section class="upf-library-content"><div class="upf-search-row"><input class="upf-search" type="search" placeholder="搜索区块名称、分类或内容…" value="' + esc(searchText) + '">' +
@@ -261,7 +267,7 @@
         const cards = settings.masks.length ? settings.masks.map(mask => {
             const maskOutput = buildOutputForIds(mask.blockIds || []);
             const missing = (mask.blockIds || []).filter(blockId => !getBlock(blockId)).length;
-            return '<article class="upf-mask-card"><div class="upf-mask-symbol">M</div><div class="upf-mask-info"><strong>' + esc(mask.name) +
+            return '<article class="upf-mask-card"><label class="upf-select-check"><input type="checkbox" data-select-mask="' + esc(mask.id) + '" ' + (selectedMaskIds.has(mask.id) ? 'checked' : '') + '>选择</label><div class="upf-mask-symbol">M</div><div class="upf-mask-info"><strong>' + esc(mask.name) +
                 '</strong><p>' + (mask.blockIds || []).length + ' 个区块 · ' + (maskOutput ? maskOutput.length + ' 字符' : '暂无可输出内容') +
                 (missing ? ' · ' + missing + ' 个区块已不存在' : '') + ' · 保存于 ' + esc(mask.updatedAt ? new Date(mask.updatedAt).toLocaleDateString() : '未知日期') +
                 '</p></div><div class="upf-mask-actions"><button class="upf-secondary-btn" data-action="load-mask" data-id="' + esc(mask.id) + '">载入</button>' +
@@ -273,6 +279,7 @@
 
         return '<div class="upf-toolbar"><div><div class="upf-eyebrow">03 / MASK COLLECTION</div><h2>已保存的面具</h2><p>一套面具只保存区块组合关系，不会复制素材；修改区块后，相关方案也会使用最新内容。</p></div>' +
             '<div class="upf-toolbar-actions"><button class="upf-secondary-btn" data-action="export-library">导出完整资料库</button></div></div>' +
+            '<div class="upf-mask-batch"><span>已选 ' + selectedMaskIds.size + ' 套面具</span><button class="upf-secondary-btn" data-action="clear-mask-selection">清除选择</button><button class="upf-primary-btn" data-action="merge-masks" ' + (selectedMaskIds.size ? '' : 'disabled') + '>合并所选面具到合成台</button></div>' +
             '<div class="upf-mask-list">' + cards + '</div>';
     }
 
@@ -286,6 +293,7 @@
             (block.id ? 'EDIT EXISTING BLOCK' : 'CREATE NEW BLOCK') + '</div><h2>' + (block.id ? '编辑资料区块' : '新建资料区块') + '</h2>' +
             '<label>区块名称<input id="upf-edit-title" maxlength="80" value="' + esc(block.title || '') + '" placeholder="例如：姓名、身高与体重、性格核心"></label>' +
             '<label>所属分类<div class="upf-category-select-row"><select id="upf-edit-category">' + categories + '</select><button class="upf-secondary-btn" data-action="add-category">新增分类</button></div></label>' +
+            '<label>标签（用逗号分隔）<input id="upf-edit-tags" maxlength="300" value="' + esc((block.tags || []).join(', ')) + '" placeholder="例如：现代、日常、重要关系"></label>' +
             '<label>资料内容<textarea id="upf-edit-content" rows="10" placeholder="写下这一块资料。可以是简短字段，也可以是完整段落；支持换行。">' + esc(block.content || '') + '</textarea></label>' +
             '<label class="upf-checkline"><input id="upf-add-after-save" type="checkbox" ' + (block.id && settings.builderIds.includes(block.id) ? 'checked' : 'checked') + '> 保存后加入当前合成台</label>' +
             '<div class="upf-editor-footer"><button class="upf-secondary-btn" data-action="cancel-edit">取消</button><button class="upf-primary-btn" data-action="save-block">保存区块</button></div></div></div>';
@@ -303,6 +311,7 @@
         const title = panel.querySelector('#upf-edit-title')?.value.trim();
         const category = panel.querySelector('#upf-edit-category')?.value || '补充设定';
         const content = panel.querySelector('#upf-edit-content')?.value ?? '';
+        const tags = [...new Set((panel.querySelector('#upf-edit-tags')?.value || '').split(/[,，、]/).map(tag => tag.trim()).filter(Boolean))];
         const addToBuilder = panel.querySelector('#upf-add-after-save')?.checked ?? true;
         if (!title) {
             notify('请先填写区块名称。', 'warning');
@@ -316,9 +325,10 @@
             block.title = title;
             block.category = category;
             block.content = content;
+            block.tags = tags;
             block.updatedAt = new Date().toISOString();
         } else {
-            block = { id: makeId(), title, category, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+            block = { id: makeId(), title, category, content, tags, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
             settings.blocks.unshift(block);
         }
 
@@ -427,7 +437,7 @@
         FIELD_TEMPLATES.forEach(([category, title]) => {
             const exists = settings.blocks.some(block => block.category === category && block.title === title);
             if (exists) return;
-            settings.blocks.push({ id: makeId(), title, category, content: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+            settings.blocks.push({ id: makeId(), title, category, content: '', tags: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
             added++;
         });
         save();
@@ -515,6 +525,7 @@
                     title: String(block.title || '未命名区块'),
                     category: String(block.category || '补充设定'),
                     content: String(block.content || ''),
+                    tags: Array.isArray(block.tags) ? [...new Set(block.tags.map(tag => String(tag).trim()).filter(Boolean))] : [],
                     createdAt: block.createdAt || new Date().toISOString(),
                     updatedAt: block.updatedAt || new Date().toISOString()
                 }));
@@ -599,6 +610,20 @@
     }
 
     function onPanelChange(event) {
+        if (event.target.matches('[data-select-block]')) {
+            const id = event.target.dataset.selectBlock;
+            if (event.target.checked) selectedLibraryIds.add(id);
+            else selectedLibraryIds.delete(id);
+            const body = panel.querySelector('.upf-body');
+            body.innerHTML = renderLibrary();
+        }
+        if (event.target.matches('[data-select-mask]')) {
+            const id = event.target.dataset.selectMask;
+            if (event.target.checked) selectedMaskIds.add(id);
+            else selectedMaskIds.delete(id);
+            const body = panel.querySelector('.upf-body');
+            body.innerHTML = renderMasks();
+        }
         if (event.target.matches('#upf-edit-category')) {
             event.target.dataset.changed = '1';
         }
@@ -625,11 +650,36 @@
         else if (action === 'save-block') saveBlock();
         else if (action === 'cancel-edit') { editingBlock = null; activeTab = returnTab; render(); }
         else if (action === 'add-block') addBlock(id);
+        else if (action === 'select-visible') {
+            const query = searchText.trim().toLocaleLowerCase();
+            settings.blocks.filter(block => (activeCategory === '全部' || block.category === activeCategory) && (!query || (block.title + '\n' + block.category + '\n' + block.content + '\n' + (block.tags || []).join(' ')).toLocaleLowerCase().includes(query))).forEach(block => selectedLibraryIds.add(block.id));
+            render();
+        }
+        else if (action === 'clear-library-selection') { selectedLibraryIds.clear(); render(); }
+        else if (action === 'batch-add-blocks') {
+            const additions = [...selectedLibraryIds].filter(blockId => getBlock(blockId) && !settings.builderIds.includes(blockId));
+            settings.builderIds.push(...additions);
+            selectedLibraryIds.clear();
+            save(); render();
+            notify('已批量加入 ' + additions.length + ' 个区块（自动跳过重复项）。', 'success');
+        }
         else if (action === 'remove-block') removeBlock(id);
         else if (action === 'delete-block') deleteBlock(id);
         else if (action === 'move-block') moveBlock(id, button.dataset.dir);
         else if (action === 'save-mask') saveMask();
         else if (action === 'load-mask') loadMask(id);
+        else if (action === 'clear-mask-selection') { selectedMaskIds.clear(); render(); }
+        else if (action === 'merge-masks') {
+            const merged = [];
+            settings.masks.filter(mask => selectedMaskIds.has(mask.id)).forEach(mask => (mask.blockIds || []).forEach(blockId => {
+                if (getBlock(blockId) && !merged.includes(blockId)) merged.push(blockId);
+            }));
+            const existing = new Set(settings.builderIds);
+            settings.builderIds.push(...merged.filter(blockId => !existing.has(blockId)));
+            selectedMaskIds.clear();
+            save(); activeTab = 'compose'; render();
+            notify('已合并面具区块，重复引用已自动去重。', 'success');
+        }
         else if (action === 'add-category') addCategory();
         else if (action === 'create-fields') createFieldTemplates();
         else if (action === 'clear-builder') {
