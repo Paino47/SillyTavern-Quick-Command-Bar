@@ -189,3 +189,18 @@ body.upf-lock-scroll { overflow: hidden !important; }
 .upf-mask-preview { flex:0 0 calc(100% - 51px); box-sizing:border-box; margin:0 0 0 51px; border-top:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.18)); padding-top:9px; }
 .upf-mask-preview summary { color:var(--SmartThemeEmColor, #b8b4aa); cursor:pointer; font-size:11px; letter-spacing:.04em; }
 .upf-mask-preview pre { max-height:260px; overflow:auto; margin:10px 0 0; padding:12px; border-radius:8px; background:var(--SmartThemeBlurTintColor, rgba(20,24,32,.6)); color:var(--SmartThemeBodyColor, inherit); white-space:pre-wrap; overflow-wrap:anywhere; font-family:inherit; font-size:12px; line-height:1.8; }
+
+.upf-library-batch, .upf-mask-batch { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; padding:9px 11px; border:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.16)); border-radius:9px; background:rgba(110,120,140,.045); }
+.upf-library-batch > span, .upf-mask-batch > span { margin-right:auto; color:var(--SmartThemeEmColor, #c5b38e); font-size:11px; }
+.upf-library-batch button:disabled, .upf-mask-batch button:disabled { opacity:.35; cursor:not-allowed; }
+.upf-select-check { display:inline-flex; align-items:center; gap:5px; color:var(--SmartThemeEmColor, #b8b4aa); font-size:10px; white-space:nowrap; opacity:.8; }
+.upf-select-check input { margin:0; accent-color:var(--SmartThemeEmColor, #c5b38e); }
+.upf-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+.upf-tags span { padding:2px 6px; border:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.18)); border-radius:10px; color:var(--SmartThemeEmColor, #c5b38e); font-size:9px; opacity:.8; }
+.upf-mask-card > .upf-select-check { align-self:flex-start; margin-top:4px; }
+@media (max-width:600px) {
+    .upf-library-batch, .upf-mask-batch { align-items:flex-start; }
+    .upf-library-batch > span, .upf-mask-batch > span { width:100%; }
+    .upf-library-batch button, .upf-mask-batch button { flex:1 1 auto; }
+    .upf-mask-card > .upf-select-check { order:-1; width:100%; }
+}
