@@ -178,3 +178,14 @@ body.upf-lock-scroll { overflow: hidden !important; }
     .upf-output-actions { display:grid; grid-template-columns:1fr 1fr; }
     .upf-output-actions .upf-text-btn { grid-column:1 / -1; }
 }
+
+
+/* Composer drag state and saved-mask preview */
+
+.upf-builder-row[draggable="true"] { cursor:grab; }
+.upf-builder-row.is-dragging { opacity:.42; }
+.upf-builder-row.is-drop-target { outline:1px dashed var(--upf-accent); outline-offset:3px; }
+.upf-drag-grip { display:inline-block; margin-right:7px; color:var(--upf-muted); cursor:grab; font-size:16px; vertical-align:-1px; }
+.upf-mask-preview { grid-column:1 / -1; margin:10px 0 0 48px; border-top:1px solid var(--upf-line); padding-top:9px; }
+.upf-mask-preview summary { color:var(--upf-muted); cursor:pointer; font-size:11px; letter-spacing:.04em; }
+.upf-mask-preview pre { max-height:260px; overflow:auto; margin:10px 0 0; padding:12px; border-radius:8px; background:var(--upf-paper); color:var(--upf-text); white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.8 inherit; }
