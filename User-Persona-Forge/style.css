@@ -204,3 +204,8 @@ body.upf-lock-scroll { overflow: hidden !important; }
     .upf-library-batch button, .upf-mask-batch button { flex:1 1 auto; }
     .upf-mask-card > .upf-select-check { order:-1; width:100%; }
 }
+
+.upf-category-manage { display:flex; gap:5px; margin-top:8px; padding-top:8px; border-top:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.15)); }
+.upf-category-manage button { flex:1; min-width:0; padding:6px 4px; border:1px solid var(--SmartThemeBorderColor, rgba(180,190,210,.2)); border-radius:6px; color:var(--SmartThemeEmColor, #b8b4aa); background:transparent; font-size:9px; cursor:pointer; }
+.upf-category-manage button:last-child { color:#d99b92; }
+@media (max-width:600px) { .upf-category-manage { width:100%; } }
