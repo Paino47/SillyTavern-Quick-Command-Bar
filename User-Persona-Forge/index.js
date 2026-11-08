@@ -83,12 +83,20 @@
 
     function save() {
         const context = ctx();
-        if (context?.saveSettingsDebounced) {
-            context.saveSettingsDebounced();
-        } else {
-            try { localStorage.setItem(MODULE, JSON.stringify(settings)); } catch (error) {
-                console.warn('[User 面具工坊] 保存失败', error);
+        if (context?.extensionSettings) {
+            if (typeof context.saveSettingsDebounced === 'function') {
+                context.saveSettingsDebounced();
+            } else {
+                console.error('[User 面具工坊] 已连接 SillyTavern extensionSettings，但 saveSettingsDebounced 不可用；本次修改可能无法持久保存。');
+                notify('酒馆设置保存接口不可用，请检查 SillyTavern 版本。', 'error');
             }
+            return;
+        }
+        try {
+            localStorage.setItem(MODULE, JSON.stringify(settings));
+        } catch (error) {
+            console.warn('[User 面具工坊] 保存失败', error);
+            notify('资料库保存失败，请检查浏览器存储空间。', 'error');
         }
     }
 
@@ -505,14 +513,17 @@
             return;
         }
         const field = document.querySelector('#persona_description');
-        if (!field) {
-            notify('没有找到 Persona 描述框。请先打开酒馆顶部的人设管理面板，再执行写入。', 'warning');
+        if (!(field instanceof HTMLTextAreaElement)) {
+            notify('没有找到 SillyTavern Persona 描述输入框。请确认扩展运行在酒馆主页面中。', 'warning');
             return;
         }
         field.value = output;
         field.dispatchEvent(new Event('input', { bubbles: true }));
-        field.dispatchEvent(new Event('change', { bubbles: true }));
-        notify('已写入当前 Persona 描述，并触发酒馆原生保存逻辑。', 'success');
+        if (field.value !== output) {
+            notify('Persona 描述框未能接收合成内容，请改用复制文本。', 'error');
+            return;
+        }
+        notify('内容已填入 Persona 描述框，并已触发酒馆原生 input 保存处理。', 'success');
     }
 
     function downloadFile(name, content, mime) {
