@@ -231,7 +231,9 @@
             '<button class="upf-primary-btn" data-action="new-block">＋ 新建区块</button></div></div>' +
             '<div class="upf-library-batch"><span>已选 ' + selectedLibraryIds.size + ' 个区块</span><button class="upf-secondary-btn" data-action="select-visible">全选当前结果</button><button class="upf-text-btn" data-action="clear-library-selection">清除选择</button><button class="upf-primary-btn" data-action="batch-add-blocks" ' + (selectedLibraryIds.size ? '' : 'disabled') + '>批量加入合成台</button></div>' +
             '<div class="upf-library-layout"><aside class="upf-category-rail"><div class="upf-rail-title">资料分类</div>' +
-            categoryHtml + '<button class="upf-add-category" data-action="add-category">＋ 新增分类</button></aside>' +
+            categoryHtml +
+            (activeCategory !== '全部' && !DEFAULT_CATEGORIES.includes(activeCategory) ? '<div class="upf-category-manage"><button data-action="rename-category" data-category="' + esc(activeCategory) + '">重命名当前分类</button><button data-action="delete-category" data-category="' + esc(activeCategory) + '">删除当前分类</button></div>' : '') +
+            '<button class="upf-add-category" data-action="add-category">＋ 新增分类</button></aside>' +
             '<section class="upf-library-content"><div class="upf-search-row"><input class="upf-search" type="search" placeholder="搜索区块名称、分类或内容…" value="' + esc(searchText) + '">' +
             '<span class="upf-result-count">' + blocks.length + ' / ' + settings.blocks.length + ' 个区块</span></div>' +
             '<div class="upf-block-list">' + cards + '</div></section></div>';
@@ -430,6 +432,34 @@
             }
             render();
         }
+    }
+
+    function renameCategory(oldName) {
+        if (!oldName || DEFAULT_CATEGORIES.includes(oldName) || !settings.categories.includes(oldName)) return;
+        const nextName = window.prompt('将分类「' + oldName + '」重命名为：', oldName);
+        if (!nextName || !nextName.trim()) return;
+        const clean = nextName.trim();
+        if (clean !== oldName && settings.categories.includes(clean)) {
+            notify('这个分类名称已经存在。', 'warning');
+            return;
+        }
+        if (clean === oldName) return;
+        settings.categories = settings.categories.map(name => name === oldName ? clean : name);
+        settings.blocks.forEach(block => { if (block.category === oldName) block.category = clean; });
+        activeCategory = clean;
+        save(); render();
+        notify('分类已重命名，原有区块已同步更新。', 'success');
+    }
+
+    function deleteCategory(name) {
+        if (!name || DEFAULT_CATEGORIES.includes(name) || !settings.categories.includes(name)) return;
+        const count = settings.blocks.filter(block => block.category === name).length;
+        if (!window.confirm('删除分类「' + name + '」？其中 ' + count + ' 个区块会移动到「补充设定」，不会被删除。')) return;
+        settings.categories = settings.categories.filter(category => category !== name);
+        settings.blocks.forEach(block => { if (block.category === name) block.category = '补充设定'; });
+        activeCategory = '全部';
+        save(); render();
+        notify('分类已删除，原有区块已移至「补充设定」。', 'success');
     }
 
     function createFieldTemplates() {
@@ -681,6 +711,8 @@
             notify('已合并面具区块，重复引用已自动去重。', 'success');
         }
         else if (action === 'add-category') addCategory();
+        else if (action === 'rename-category') renameCategory(button.dataset.category);
+        else if (action === 'delete-category') deleteCategory(button.dataset.category);
         else if (action === 'create-fields') createFieldTemplates();
         else if (action === 'clear-builder') {
             if (window.confirm('清空当前合成台？区块库和已保存面具不会受到影响。')) {
