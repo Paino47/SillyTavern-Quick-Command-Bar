@@ -103,11 +103,11 @@
         return settings.builderIds.map(getBlock).filter(Boolean);
     }
 
-    function buildOutput() {
+    function buildOutputForIds(ids) {
         const lines = [];
         let lastCategory = null;
-        getBuilderBlocks().forEach(block => {
-            const content = block.content.trim();
+        (ids || []).map(getBlock).filter(Boolean).forEach(block => {
+            const content = String(block.content || '').trim();
             if (!content) return;
             if (block.category !== lastCategory) {
                 if (lines.length) lines.push('');
@@ -117,6 +117,10 @@
             lines.push(block.title ? (content.includes('\n') ? block.title + '\n' + content : block.title + '：' + content) : content);
         });
         return lines.join('\n');
+    }
+
+    function buildOutput() {
+        return buildOutputForIds(settings.builderIds);
     }
 
     function ensurePanel() {
@@ -144,6 +148,10 @@
 
         panel.addEventListener('click', onPanelClick);
         panel.addEventListener('input', onPanelInput);
+        panel.addEventListener('dragstart', onBuilderDragStart);
+        panel.addEventListener('dragover', onBuilderDragOver);
+        panel.addEventListener('drop', onBuilderDrop);
+        panel.addEventListener('dragend', onBuilderDragEnd);
         panel.addEventListener('change', onPanelChange);
         return panel;
     }
@@ -227,7 +235,7 @@
         const blocks = getBuilderBlocks();
         const output = buildOutput();
         const rows = blocks.length ? blocks.map((block, index) =>
-            '<article class="upf-builder-row"><div class="upf-order">' + String(index + 1).padStart(2, '0') + '</div>' +
+            '<article class="upf-builder-row" draggable="true" data-drag-id="' + esc(block.id) + '"><div class="upf-order"><span class="upf-drag-grip" aria-label="拖拽排序">⠿</span>' + String(index + 1).padStart(2, '0') + '</div>' +
             '<div class="upf-builder-info"><strong>' + esc(block.title) + '</strong><small>' + esc(block.category) +
             (block.content.trim() ? '' : ' · 空内容') + '</small></div>' +
             '<div class="upf-builder-actions"><button data-action="move-block" data-id="' + esc(block.id) + '" data-dir="-1" ' + (index === 0 ? 'disabled' : '') + ' title="上移">↑</button>' +
@@ -250,13 +258,17 @@
     }
 
     function renderMasks() {
-        const cards = settings.masks.length ? settings.masks.map(mask =>
-            '<article class="upf-mask-card"><div class="upf-mask-symbol">M</div><div class="upf-mask-info"><strong>' + esc(mask.name) +
-            '</strong><p>' + (mask.blockIds || []).length + ' 个区块 · 保存于 ' + esc(mask.updatedAt ? new Date(mask.updatedAt).toLocaleDateString() : '未知日期') +
-            '</p></div><div class="upf-mask-actions"><button class="upf-primary-btn" data-action="load-mask" data-id="' + esc(mask.id) + '">载入</button>' +
-            '<button data-action="rename-mask" data-id="' + esc(mask.id) + '" title="重命名">✎</button><button data-action="duplicate-mask" data-id="' + esc(mask.id) + '" title="复制方案">⧉</button>' +
-            '<button data-action="delete-mask" data-id="' + esc(mask.id) + '" title="删除方案">×</button></div></article>'
-        ).join('') : '<div class="upf-empty"><span class="upf-empty-symbol">M</span><strong>还没有保存的面具</strong><p>把区块加入合成台、调整好顺序，然后保存为一套可重复使用的方案。</p>' +
+        const cards = settings.masks.length ? settings.masks.map(mask => {
+            const maskOutput = buildOutputForIds(mask.blockIds || []);
+            const missing = (mask.blockIds || []).filter(blockId => !getBlock(blockId)).length;
+            return '<article class="upf-mask-card"><div class="upf-mask-symbol">M</div><div class="upf-mask-info"><strong>' + esc(mask.name) +
+                '</strong><p>' + (mask.blockIds || []).length + ' 个区块 · ' + (maskOutput ? maskOutput.length + ' 字符' : '暂无可输出内容') +
+                (missing ? ' · ' + missing + ' 个区块已不存在' : '') + ' · 保存于 ' + esc(mask.updatedAt ? new Date(mask.updatedAt).toLocaleDateString() : '未知日期') +
+                '</p></div><div class="upf-mask-actions"><button class="upf-secondary-btn" data-action="load-mask" data-id="' + esc(mask.id) + '">载入</button>' +
+                '<button data-action="rename-mask" data-id="' + esc(mask.id) + '" title="重命名">✎</button><button data-action="duplicate-mask" data-id="' + esc(mask.id) + '" title="复制方案">⧉</button>' +
+                '<button data-action="delete-mask" data-id="' + esc(mask.id) + '" title="删除方案">×</button></div>' +
+                '<details class="upf-mask-preview"><summary>预览这套面具</summary><pre>' + esc(maskOutput || '这套面具目前没有可输出的文字。') + '</pre></details></article>';
+        }).join('') : '<div class="upf-empty"><span class="upf-empty-symbol">M</span><strong>还没有保存的面具</strong><p>把区块加入合成台、调整好顺序，然后保存为一套可重复使用的方案。</p>' +
             '<button class="upf-primary-btn" data-action="tab" data-tab="compose">前往合成台</button></div>';
 
         return '<div class="upf-toolbar"><div><div class="upf-eyebrow">03 / MASK COLLECTION</div><h2>已保存的面具</h2><p>一套面具只保存区块组合关系，不会复制素材；修改区块后，相关方案也会使用最新内容。</p></div>' +
@@ -377,7 +389,11 @@
     function loadMask(id) {
         const mask = settings.masks.find(item => item.id === id);
         if (!mask) return;
-        settings.builderIds = mask.blockIds.filter(blockId => !!getBlock(blockId));
+        const nextIds = (mask.blockIds || []).filter(blockId => !!getBlock(blockId));
+        if (settings.builderIds.length && settings.builderIds.join('|') !== nextIds.join('|')) {
+            if (!window.confirm('载入「' + mask.name + '」会替换当前合成台的区块组合，但不会删除区块库或其他面具。继续吗？')) return;
+        }
+        settings.builderIds = nextIds;
         save();
         activeTab = 'compose';
         render();
@@ -521,6 +537,50 @@
             }
         });
         input.click();
+    }
+
+    let draggedBlockId = null;
+
+    function onBuilderDragStart(event) {
+        const row = event.target.closest('.upf-builder-row[data-drag-id]');
+        if (!row || !panel.querySelector('.upf-builder-list')?.contains(row)) return;
+        draggedBlockId = row.dataset.dragId;
+        row.classList.add('is-dragging');
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', draggedBlockId);
+        }
+    }
+
+    function onBuilderDragOver(event) {
+        const row = event.target.closest('.upf-builder-row[data-drag-id]');
+        if (!draggedBlockId || !row || row.dataset.dragId === draggedBlockId) return;
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        panel.querySelectorAll('.upf-builder-row.is-drop-target').forEach(item => item.classList.remove('is-drop-target'));
+        row.classList.add('is-drop-target');
+    }
+
+    function onBuilderDrop(event) {
+        const row = event.target.closest('.upf-builder-row[data-drag-id]');
+        if (!draggedBlockId || !row) return;
+        event.preventDefault();
+        const from = settings.builderIds.indexOf(draggedBlockId);
+        const to = settings.builderIds.indexOf(row.dataset.dragId);
+        if (from < 0 || to < 0 || from === to) return;
+        const next = settings.builderIds.slice();
+        const moved = next.splice(from, 1)[0];
+        next.splice(to, 0, moved);
+        settings.builderIds = next;
+        save();
+        render();
+    }
+
+    function onBuilderDragEnd() {
+        draggedBlockId = null;
+        panel?.querySelectorAll('.upf-builder-row.is-dragging, .upf-builder-row.is-drop-target').forEach(row => {
+            row.classList.remove('is-dragging', 'is-drop-target');
+        });
     }
 
     function onPanelInput(event) {
